@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Loader2, Sparkles, Info, Plus, Activity, Heart, Brain, Home, CheckCircle2 } from 'lucide-react';
+import { Loader2, Sparkles, Info, Plus, Activity, Heart, Brain, Home, CheckCircle2, Share2 } from 'lucide-react';
 import { SYMPTOM_CATEGORIES, Language, SymptomRecord } from '../types';
 import { generateRecoveryAdvice } from '../services/geminiService';
 import { t } from '../utils/translations';
+import ShareModal from './ShareModal';
 
 interface CheckInProps {
   userAddiction: string;
@@ -23,6 +24,7 @@ const CheckIn: React.FC<CheckInProps> = ({ userAddiction, daysClean, onComplete,
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'Physical' | 'Emotional' | 'Mental'>('Physical');
   const [resultAdvice, setResultAdvice] = useState<any>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const toggleSymptomSelection = (key: string, category: 'Physical' | 'Emotional' | 'Mental' | 'Other') => {
     if (selectedSymptomKeys.includes(key)) {
@@ -100,6 +102,15 @@ const CheckIn: React.FC<CheckInProps> = ({ userAddiction, daysClean, onComplete,
   if (step === 4 && resultAdvice) {
     return (
         <div className="p-6 md:p-12 md:ml-64 max-w-5xl mx-auto pb-24 animate-in slide-in-from-bottom-5 fade-in duration-500">
+            {showShareModal && (
+                <ShareModal 
+                    daysClean={daysClean} 
+                    addiction={userAddiction} 
+                    streak={daysClean} // Assuming streak ~ daysClean for simple logic, passed prop logic handles exact streak in App
+                    onClose={() => setShowShareModal(false)} 
+                />
+            )}
+            
             <div className="text-center mb-10">
                 <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
                     <CheckCircle2 className="text-white w-10 h-10" />
@@ -127,12 +138,20 @@ const CheckIn: React.FC<CheckInProps> = ({ userAddiction, daysClean, onComplete,
                 </div>
             </div>
 
-            <button 
-                onClick={onExit}
-                className="w-full max-w-md mx-auto bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors border border-slate-700"
-            >
-                <Home size={20} /> {t('go_home', lang)}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                <button 
+                    onClick={() => setShowShareModal(true)}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-900/40"
+                >
+                    <Share2 size={20} /> Share Progress
+                </button>
+                <button 
+                    onClick={onExit}
+                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                >
+                    <Home size={20} /> {t('go_home', lang)}
+                </button>
+            </div>
         </div>
     );
   }

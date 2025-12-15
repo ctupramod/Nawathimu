@@ -79,8 +79,15 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onChangeView, lang
           })}
         </div>
 
-        <div className="mt-auto pt-6 border-t border-slate-800 text-xs text-slate-500">
-           © 2024 Rise & Recover
+        <div className="mt-auto pt-6 border-t border-slate-800">
+            {/* Muttiya Logo Footer */}
+            <div className="flex flex-col gap-1 opacity-70">
+                <div className="flex items-center gap-1">
+                    <span className="text-red-500 font-bold font-['Noto_Sans_Sinhala']">මුට්ටිය</span>
+                    <span className="text-red-500 font-bold font-['Noto_Sans_Sinhala'] text-xs">.කොම්</span>
+                </div>
+                <p className="text-[10px] text-slate-500">© 2024 Muttiya.com</p>
+            </div>
         </div>
       </nav>
     </>

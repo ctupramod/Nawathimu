@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, Calendar, Flame, ArrowRight, CheckCircle2, 
-  Users, Gamepad2, Award, TrendingUp, Activity 
+  Users, Gamepad2, Award, TrendingUp, Activity, Share2
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { User, CheckInLog, Language, AppView } from '../types';
 import RecoveryTimeline from './RecoveryTimeline';
 import { t } from '../utils/translations';
+import ShareModal from './ShareModal';
 
 interface DashboardProps {
   user: User;
@@ -17,6 +18,8 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, daysClean, logs, onChangeView, lang }) => {
+  const [showShareModal, setShowShareModal] = useState(false);
+
   // Calculate simple mood trend for mini chart
   const moodData = logs.slice(-7).map(log => ({
     mood: log.mood,
@@ -29,6 +32,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, daysClean, logs, onChangeVi
 
   return (
     <div className="p-6 pb-24 md:p-8 md:ml-64 max-w-7xl mx-auto space-y-6">
+      {showShareModal && (
+        <ShareModal 
+            daysClean={daysClean} 
+            addiction={user.addiction} 
+            streak={user.currentStreak || 0}
+            onClose={() => setShowShareModal(false)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -66,6 +78,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, daysClean, logs, onChangeVi
              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500"></div>
              <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-500 -translate-y-1/2 translate-x-1/4"></div>
              
+             {/* Share Button absolute positioned */}
+             <button 
+                onClick={() => setShowShareModal(true)}
+                className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-all z-20 text-white"
+                title="Share Milestone"
+             >
+                <Share2 size={20} />
+             </button>
+
              <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="text-center md:text-left">
                     <p className="text-slate-400 font-medium uppercase tracking-wider text-xs mb-2">Total Recovery Time</p>
@@ -105,22 +126,40 @@ const Dashboard: React.FC<DashboardProps> = ({ user, daysClean, logs, onChangeVi
                 className={`relative overflow-hidden rounded-2xl p-6 text-left border transition-all duration-300 group ${
                     hasCheckedInToday 
                     ? 'bg-slate-800/50 border-slate-700 opacity-75 cursor-default' 
-                    : 'bg-gradient-to-br from-emerald-900/40 to-slate-900 border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                    : 'bg-gradient-to-br from-emerald-900/80 to-slate-900 border-emerald-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:scale-[1.02] active:scale-[0.98]'
                 }`}
               >
-                 <div className="flex justify-between items-start mb-4">
-                    <div className={`p-3 rounded-xl ${hasCheckedInToday ? 'bg-slate-700 text-slate-400' : 'bg-emerald-500 text-white'}`}>
-                        <CheckCircle2 size={24} />
+                 {/* Decorative Pulse Background for Active State */}
+                 {!hasCheckedInToday && (
+                    <>
+                        <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-gradient-to-r from-transparent via-white/5 to-transparent rotate-45 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl animate-pulse"></div>
+                    </>
+                 )}
+
+                 <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div className={`p-3 rounded-xl shadow-lg transition-transform duration-300 ${
+                        hasCheckedInToday 
+                            ? 'bg-slate-700 text-slate-400' 
+                            : 'bg-emerald-500 text-white group-hover:scale-110 group-hover:rotate-3 shadow-emerald-900/40'
+                        }`}>
+                        <CheckCircle2 size={24} className={!hasCheckedInToday ? "animate-pulse" : ""} />
                     </div>
-                    {!hasCheckedInToday && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">ACTION REQUIRED</span>}
+                    {!hasCheckedInToday && (
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full animate-pulse shadow-lg shadow-red-900/50 border border-red-400/50">
+                            ACTION REQUIRED
+                        </span>
+                    )}
                  </div>
-                 <h3 className="text-xl font-bold text-white mb-1">{t('dailyCheckIn', lang)}</h3>
-                 <p className="text-sm text-slate-400">
+                 
+                 <h3 className="text-xl font-bold text-white mb-1 relative z-10">{t('dailyCheckIn', lang)}</h3>
+                 <p className="text-sm text-slate-300 relative z-10 font-medium">
                     {hasCheckedInToday ? "You're all set for today!" : "Log your symptoms and get daily advice."}
                  </p>
+                 
                  {!hasCheckedInToday && (
-                    <div className="mt-4 flex items-center text-emerald-400 text-sm font-bold group-hover:gap-2 transition-all">
-                        Start Now <ArrowRight size={16} />
+                    <div className="mt-4 flex items-center text-emerald-400 text-sm font-bold group-hover:gap-2 transition-all relative z-10">
+                        Start Now <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                  )}
               </button>
