@@ -12,6 +12,8 @@ export interface User {
   email?: string;
   phone?: string;
   isAdmin?: boolean;
+  currentStreak: number;
+  lastCheckInDate?: string;
 }
 
 export interface SymptomRecord {
@@ -28,6 +30,10 @@ export interface CheckInLog {
   cravings: number; // 1-10
   symptoms: SymptomRecord[];
   notes: string;
+  advice?: {
+    practicalTips: string[];
+    encouragement: string;
+  };
 }
 
 export interface Achievement {

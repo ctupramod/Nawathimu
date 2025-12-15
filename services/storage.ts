@@ -1,3 +1,4 @@
+
 import { User, ChatMessage, CheckInLog, AdminConfig } from '../types';
 
 const STORAGE_KEYS = {
@@ -32,7 +33,8 @@ if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
     level: 99,
     city: 'Colombo',
     ageRange: '35-44',
-    isAdmin: true
+    isAdmin: true,
+    currentStreak: 0
   };
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([admin]));
   // Store plain text password separately for mock auth (In real app, hash this!)

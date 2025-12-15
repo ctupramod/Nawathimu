@@ -1,6 +1,10 @@
 import React from 'react';
-import { ShieldCheck, Calendar, Flame, ArrowRight, Droplets, Wind, Sparkles, CheckCircle2, Users } from 'lucide-react';
-import { User, CheckInLog, AiAdvice, Language, AppView } from '../types';
+import { 
+  ShieldCheck, Calendar, Flame, ArrowRight, CheckCircle2, 
+  Users, Gamepad2, Award, TrendingUp, Activity 
+} from 'lucide-react';
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { User, CheckInLog, Language, AppView } from '../types';
 import RecoveryTimeline from './RecoveryTimeline';
 import { t } from '../utils/translations';
 
@@ -8,92 +12,197 @@ interface DashboardProps {
   user: User;
   daysClean: number;
   logs: CheckInLog[];
-  lastAdvice: AiAdvice | null;
-  onCheckInClick: () => void;
   onChangeView: (view: AppView) => void;
   lang: Language;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, daysClean, logs, lastAdvice, onCheckInClick, onChangeView, lang }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, daysClean, logs, onChangeView, lang }) => {
+  // Calculate simple mood trend for mini chart
+  const moodData = logs.slice(-7).map(log => ({
+    mood: log.mood,
+    day: new Date(log.date).getDate()
+  }));
+
+  const lastCheckIn = new Date(user.lastCheckInDate || 0).toDateString();
+  const today = new Date().toDateString();
+  const hasCheckedInToday = lastCheckIn === today;
+
   return (
-    <div className="p-6 pb-24 max-w-md mx-auto space-y-6">
+    <div className="p-6 pb-24 md:p-8 md:ml-64 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">{t('welcome', lang)}, {user.name}</h1>
-          <p className="text-emerald-400 text-sm font-medium flex items-center gap-1">
-             <ShieldCheck size={14} /> {t('fighting', lang)} {user.addiction}
+          <h1 className="text-3xl font-bold text-white">{t('welcome', lang)}, {user.name}</h1>
+          <p className="text-emerald-400 text-sm font-medium flex items-center gap-1 mt-1">
+             <ShieldCheck size={16} /> {t('fighting', lang)} {user.addiction}
           </p>
         </div>
-        <div className="bg-slate-800 px-3 py-1 rounded-full border border-slate-700 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
-          <span className="text-amber-400 font-bold text-sm">{user.coins} XP</span>
+        <div className="flex items-center gap-3 bg-slate-800/80 p-2 rounded-full border border-slate-700 w-fit">
+          <div className="bg-amber-500/20 p-2 rounded-full">
+            <Flame className="text-amber-500" size={20} />
+          </div>
+          <div className="pr-4">
+             <p className="text-xs text-slate-400 uppercase font-bold">Streak</p>
+             <p className="text-lg font-bold text-white leading-none">{user.currentStreak || 0} Days</p>
+          </div>
+          <div className="h-8 w-px bg-slate-700 mx-1"></div>
+          <div className="bg-emerald-500/20 p-2 rounded-full">
+             <Award className="text-emerald-500" size={20} />
+          </div>
+          <div className="pr-4">
+             <p className="text-xs text-slate-400 uppercase font-bold">Level {user.level}</p>
+             <p className="text-lg font-bold text-white leading-none">{user.coins} XP</p>
+          </div>
         </div>
       </div>
 
-      {/* Big Counter */}
-      <div className="glass-panel p-8 rounded-3xl text-center relative overflow-hidden group">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500"></div>
-        <div className="absolute -right-10 -top-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500"></div>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
-        <p className="text-slate-400 font-medium uppercase tracking-wider text-xs">{t('streak', lang)}</p>
-        <div className="text-7xl font-bold text-white my-2 tracking-tighter drop-shadow-xl font-mono">
-          {daysClean}
-        </div>
-        <p className="text-emerald-400 font-medium text-lg">{t('cleanDays', lang)}</p>
-      </div>
+        {/* Left Column (Hero & Widgets) */}
+        <div className="md:col-span-8 space-y-6">
+           {/* Hero Card */}
+           <div className="glass-panel p-8 rounded-3xl relative overflow-hidden group min-h-[200px] flex items-center">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500"></div>
+             <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-500 -translate-y-1/2 translate-x-1/4"></div>
+             
+             <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="text-center md:text-left">
+                    <p className="text-slate-400 font-medium uppercase tracking-wider text-xs mb-2">Total Recovery Time</p>
+                    <div className="text-6xl md:text-7xl font-bold text-white tracking-tighter font-mono">
+                    {daysClean}
+                    </div>
+                    <p className="text-emerald-400 font-medium text-lg">{t('cleanDays', lang)}</p>
+                </div>
 
-      {/* Action Button */}
-      <button
-        onClick={onCheckInClick}
-        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 p-1 rounded-2xl shadow-xl shadow-emerald-900/30 transition-transform active:scale-95 hover:shadow-emerald-500/20"
-      >
-        <div className="bg-slate-900/50 hover:bg-transparent transition-colors rounded-xl p-4 flex items-center justify-between backdrop-blur-sm">
-           <div className="flex items-center gap-3">
-             <div className="bg-white/20 p-2 rounded-lg">
-               <CheckCircle2 className="text-white" size={24} />
-             </div>
-             <div className="text-left">
-               <p className="font-bold text-white">{t('dailyCheckIn', lang)}</p>
-               <p className="text-xs text-emerald-100">{t('getHelp', lang)}</p>
+                {/* Mini Mood Chart */}
+                <div className="w-full md:w-1/2 h-32 bg-slate-900/40 rounded-xl border border-slate-700/50 p-2">
+                    <div className="flex items-center gap-2 mb-2 px-2">
+                        <TrendingUp size={14} className="text-emerald-400" />
+                        <span className="text-xs font-bold text-slate-400">7 Day Mood Trend</span>
+                    </div>
+                    <ResponsiveContainer width="100%" height="80%">
+                        <AreaChart data={moodData}>
+                            <defs>
+                                <linearGradient id="colorMoodHero" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <Area type="monotone" dataKey="mood" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorMoodHero)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
              </div>
            </div>
-           <ArrowRight className="text-white opacity-50" />
+
+           {/* Action Widgets Grid */}
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Check In Widget */}
+              <button
+                onClick={() => onChangeView(AppView.CHECKIN)}
+                disabled={hasCheckedInToday}
+                className={`relative overflow-hidden rounded-2xl p-6 text-left border transition-all duration-300 group ${
+                    hasCheckedInToday 
+                    ? 'bg-slate-800/50 border-slate-700 opacity-75 cursor-default' 
+                    : 'bg-gradient-to-br from-emerald-900/40 to-slate-900 border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                }`}
+              >
+                 <div className="flex justify-between items-start mb-4">
+                    <div className={`p-3 rounded-xl ${hasCheckedInToday ? 'bg-slate-700 text-slate-400' : 'bg-emerald-500 text-white'}`}>
+                        <CheckCircle2 size={24} />
+                    </div>
+                    {!hasCheckedInToday && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">ACTION REQUIRED</span>}
+                 </div>
+                 <h3 className="text-xl font-bold text-white mb-1">{t('dailyCheckIn', lang)}</h3>
+                 <p className="text-sm text-slate-400">
+                    {hasCheckedInToday ? "You're all set for today!" : "Log your symptoms and get daily advice."}
+                 </p>
+                 {!hasCheckedInToday && (
+                    <div className="mt-4 flex items-center text-emerald-400 text-sm font-bold group-hover:gap-2 transition-all">
+                        Start Now <ArrowRight size={16} />
+                    </div>
+                 )}
+              </button>
+
+              {/* Games Widget */}
+              <button
+                onClick={() => onChangeView(AppView.GAMES)}
+                className="relative overflow-hidden rounded-2xl p-6 text-left border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900 hover:border-indigo-500/60 hover:shadow-[0_0_20px_rgba(99,102,241,0.2)] transition-all group"
+              >
+                 <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 rounded-xl bg-indigo-500 text-white">
+                        <Gamepad2 size={24} />
+                    </div>
+                 </div>
+                 <h3 className="text-xl font-bold text-white mb-1">{t('games', lang)}</h3>
+                 <p className="text-sm text-slate-400">Distract your mind with quick dopamine-boosting games.</p>
+                 <div className="mt-4 flex items-center text-indigo-400 text-sm font-bold group-hover:gap-2 transition-all">
+                    Play <ArrowRight size={16} />
+                 </div>
+              </button>
+           </div>
+           
+           {/* Timeline */}
+           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                <RecoveryTimeline daysClean={daysClean} addiction={user.addiction} lang={lang} compact={true} />
+           </div>
         </div>
-      </button>
 
-      {/* Current Stage Timeline (Compact) */}
-      <RecoveryTimeline daysClean={daysClean} addiction={user.addiction} lang={lang} compact={true} />
-
-      {/* Community Card */}
-      <button 
-        onClick={() => onChangeView(AppView.COMMUNITY)}
-        className="w-full bg-slate-800/50 hover:bg-slate-800 p-4 rounded-2xl border border-slate-700 flex items-center justify-between transition-colors"
-      >
-         <div className="flex items-center gap-3">
-            <div className="bg-blue-900/30 p-2 rounded-lg">
-                <Users className="text-blue-400" size={20} />
+        {/* Right Column (Stats & Community) */}
+        <div className="md:col-span-4 space-y-6">
+            {/* Quick Stats */}
+            <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700">
+                <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                    <Activity size={18} className="text-blue-400"/> At a Glance
+                </h3>
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-slate-900/50 rounded-xl">
+                        <div className="flex items-center gap-3">
+                            <Calendar size={18} className="text-slate-400" />
+                            <span className="text-slate-300 text-sm">Start Date</span>
+                        </div>
+                        <span className="font-bold text-white">{new Date(user.quitDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-slate-900/50 rounded-xl">
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 size={18} className="text-slate-400" />
+                            <span className="text-slate-300 text-sm">Total Check-ins</span>
+                        </div>
+                        <span className="font-bold text-white">{logs.length}</span>
+                    </div>
+                </div>
             </div>
-            <div className="text-left">
-                <p className="font-bold text-white">{t('community', lang)}</p>
-                <p className="text-xs text-slate-400">Connect with anonymous peers</p>
-            </div>
-         </div>
-         <ArrowRight className="text-slate-500" size={18} />
-      </button>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-         <div className="glass-panel p-4 rounded-2xl">
-            <Calendar className="text-blue-400 mb-2" size={20} />
-            <p className="text-xs text-slate-500">Started</p>
-            <p className="font-bold text-slate-200">{new Date(user.quitDate).toLocaleDateString()}</p>
-         </div>
-         <div className="glass-panel p-4 rounded-2xl">
-            <Flame className="text-orange-400 mb-2" size={20} />
-            <p className="text-xs text-slate-500">Check-ins</p>
-            <p className="font-bold text-slate-200">{logs.length}</p>
-         </div>
+            {/* Community Teaser */}
+            <button 
+                onClick={() => onChangeView(AppView.COMMUNITY)}
+                className="w-full bg-slate-800/50 hover:bg-slate-800 p-6 rounded-2xl border border-slate-700 text-left transition-colors group"
+            >
+                <div className="bg-blue-600/20 w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <Users size={24} />
+                </div>
+                <h3 className="font-bold text-white text-lg">{t('community', lang)}</h3>
+                <p className="text-sm text-slate-400 mt-1">Connect with others who understand what you're going through.</p>
+                <div className="mt-4 w-full bg-slate-700 h-px group-hover:bg-blue-500/50 transition-colors"></div>
+                <div className="mt-3 text-xs text-slate-500 flex justify-between">
+                    <span>Online Now</span>
+                    <span className="text-green-400 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> 12 Active</span>
+                </div>
+            </button>
+            
+            {/* Achievement Mini Teaser (can link to Journal/Awards) */}
+            <div className="bg-gradient-to-br from-amber-900/20 to-slate-900 border border-amber-900/30 rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-2">
+                    <Award className="text-amber-500" />
+                    <h3 className="font-bold text-white">Next Milestone</h3>
+                </div>
+                <p className="text-sm text-slate-400 mb-3">You are close to unlocking "1 Month Clean"!</p>
+                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-amber-500 h-full w-3/4"></div>
+                </div>
+            </div>
+        </div>
       </div>
     </div>
   );

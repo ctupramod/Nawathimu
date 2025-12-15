@@ -11,6 +11,7 @@ import Dashboard from './components/Dashboard';
 import Community from './components/Community';
 import Admin from './components/Admin';
 import Profile from './components/Profile';
+import { Globe } from 'lucide-react';
 
 const App: React.FC = () => {
   // --- State ---
@@ -51,15 +52,33 @@ const App: React.FC = () => {
     setLastAdvice(null);
   };
 
-  const handleCheckInComplete = (mood: number, cravings: number, symptoms: SymptomRecord[], notes: string, advice: any) => {
+  const handleCheckInComplete = (mood: number, cravings: number, symptoms: SymptomRecord[], notes: string, advice: { practicalTips: string[], encouragement: string }) => {
     if (!user) return;
+    
+    // Calculate Streak
+    const today = new Date().toDateString();
+    const lastCheckIn = user.lastCheckInDate ? new Date(user.lastCheckInDate).toDateString() : null;
+    let newStreak = user.currentStreak || 0;
+
+    // If last check in was yesterday, increment streak. 
+    // If today, keep same. If older, reset to 1.
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (lastCheckIn === yesterday.toDateString()) {
+        newStreak += 1;
+    } else if (lastCheckIn !== today) {
+        newStreak = 1;
+    }
+
     const newLog: CheckInLog = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
       mood,
       cravings,
       symptoms,
-      notes
+      notes,
+      advice: advice // Save advice history
     };
     
     StorageService.saveUserLog(user.username, newLog);
@@ -75,25 +94,64 @@ const App: React.FC = () => {
     
     setLastAdvice(newAdvice);
     
-    // Reward mechanism
-    // In a real app we would update the user record in storage too
-    setUser({ ...user, coins: user.coins + 50 });
+    // Update User
+    const updatedUser = { 
+        ...user, 
+        coins: user.coins + 50 + (newStreak * 5), // Streak bonus
+        currentStreak: newStreak,
+        lastCheckInDate: new Date().toISOString()
+    };
+    
+    // Save user to storage (simulated update)
+    const users = StorageService.getUsers();
+    const idx = users.findIndex(u => u.username === user.username);
+    if(idx !== -1) {
+        users[idx] = updatedUser;
+        localStorage.setItem('rr_users', JSON.stringify(users));
+    }
+    setUser(updatedUser);
   };
 
   const handleGameReward = (amount: number) => {
-    if (user) setUser({ ...user, coins: user.coins + amount });
+    if (user) {
+        const updatedUser = { ...user, coins: user.coins + amount };
+        setUser(updatedUser);
+        // Persist
+        const users = StorageService.getUsers();
+        const idx = users.findIndex(u => u.username === user.username);
+        if(idx !== -1) {
+            users[idx] = updatedUser;
+            localStorage.setItem('rr_users', JSON.stringify(users));
+        }
+    }
   };
 
   // --- Main Render ---
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden">
-      {/* Background Gradients */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 relative">
+      {/* Background Gradients - Fixed position so they don't scroll away */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
-         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/20 rounded-full blur-3xl"></div>
-         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/20 rounded-full blur-3xl"></div>
+         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/10 rounded-full blur-3xl"></div>
+         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Global Language Switcher for Logged In Users */}
+        {view !== AppView.AUTH && user && (
+            <div className="absolute top-4 right-4 z-50 flex gap-2 bg-slate-900/80 p-1.5 rounded-full border border-slate-700 backdrop-blur-md">
+                <Globe size={16} className="ml-2 text-slate-400 self-center" />
+                {(['en', 'si', 'ta'] as Language[]).map(l => (
+                    <button 
+                        key={l}
+                        onClick={() => setLang(l)}
+                        className={`w-7 h-7 rounded-full font-bold text-[10px] transition-all ${lang === l ? 'bg-emerald-500 text-white shadow-lg' : 'bg-transparent text-slate-400 hover:text-white'}`}
+                    >
+                        {l.toUpperCase()}
+                    </button>
+                ))}
+            </div>
+        )}
+
         {view === AppView.AUTH && (
           <Auth onLogin={handleLogin} lang={lang} setLang={setLang} />
         )}
@@ -105,8 +163,6 @@ const App: React.FC = () => {
                 user={user} 
                 daysClean={daysClean} 
                 logs={logs} 
-                lastAdvice={lastAdvice} 
-                onCheckInClick={() => setView(AppView.CHECKIN)} 
                 onChangeView={setView}
                 lang={lang}
               />

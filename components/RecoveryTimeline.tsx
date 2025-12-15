@@ -10,7 +10,7 @@ interface RecoveryTimelineProps {
   daysClean: number;
   addiction: string;
   lang: Language;
-  compact?: boolean; // New prop for Dashboard view
+  compact?: boolean;
 }
 
 interface Phase {
@@ -24,7 +24,6 @@ interface Phase {
 }
 
 const RecoveryTimeline: React.FC<RecoveryTimelineProps> = ({ daysClean, lang, compact = false }) => {
-  // Define phases using translation keys
   const phases: Phase[] = [
     {
       id: 'acute',
@@ -93,14 +92,16 @@ const RecoveryTimeline: React.FC<RecoveryTimelineProps> = ({ daysClean, lang, co
     }
   ];
 
-  // Determine current phase index
   const currentPhaseIndex = phases.findIndex(p => daysClean >= p.minDays && daysClean <= p.maxDays);
-  // Default to last phase if daysClean is very high, or first if 0
   const activeIndex = currentPhaseIndex === -1 ? (daysClean > 90 ? phases.length - 1 : 0) : currentPhaseIndex;
-
+  
+  // Default expanded phase is the active one
   const [expandedPhase, setExpandedPhase] = useState<number | null>(compact ? activeIndex : activeIndex);
 
   const togglePhase = (index: number) => {
+    // Prevent opening locked phases
+    if (index > activeIndex) return;
+
     if (expandedPhase === index) {
       setExpandedPhase(null);
     } else {
@@ -108,7 +109,6 @@ const RecoveryTimeline: React.FC<RecoveryTimelineProps> = ({ daysClean, lang, co
     }
   };
 
-  // If compact mode, filter to only active phase
   const phasesToRender = compact ? [phases[activeIndex]] : phases;
 
   return (
@@ -116,27 +116,27 @@ const RecoveryTimeline: React.FC<RecoveryTimelineProps> = ({ daysClean, lang, co
       <h2 className="text-lg font-bold text-white mb-2">{t('timeline_title', lang)}</h2>
       
       {phasesToRender.map((phase, i) => {
-        // Map back to original index for full logic if needed, but for display we rely on phase data
         const index = compact ? activeIndex : i;
         const isActive = index === activeIndex;
         const isPast = index < activeIndex;
+        const isLocked = index > activeIndex;
         const isExpanded = expandedPhase === index;
 
         return (
           <div 
             key={phase.id}
-            className={`rounded-2xl transition-all duration-300 overflow-hidden border ${
+            className={`rounded-2xl transition-all duration-300 overflow-hidden border relative ${
               isActive 
                 ? 'bg-[#1e1b4b] border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)]' 
                 : isPast 
                   ? 'bg-slate-900/50 border-emerald-900/30' 
                   : 'bg-slate-900/30 border-slate-800'
-            }`}
+            } ${isLocked ? 'opacity-70' : ''}`}
           >
             {/* Header */}
             <div 
               onClick={() => togglePhase(index)}
-              className="p-4 flex items-center justify-between cursor-pointer"
+              className={`p-4 flex items-center justify-between ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <div className="flex items-center gap-3">
                 {isPast ? (
@@ -159,18 +159,29 @@ const RecoveryTimeline: React.FC<RecoveryTimelineProps> = ({ daysClean, lang, co
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {isActive && (
-                  <span className="bg-indigo-600/20 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
-                    {t('you_are_here', lang)}
-                  </span>
-                )}
-                {isExpanded ? <ChevronUp size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
-              </div>
+              {!isLocked && (
+                <div className="flex items-center gap-2">
+                    {isActive && (
+                    <span className="bg-indigo-600/20 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
+                        {t('you_are_here', lang)}
+                    </span>
+                    )}
+                    {isExpanded ? <ChevronUp size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
+                </div>
+              )}
             </div>
 
-            {/* Expanded Content */}
-            {isExpanded && (
+            {/* Locked Overlay / Content */}
+            {isLocked ? (
+                 <div className="px-4 pb-4">
+                     <div className="flex items-center gap-2 p-3 bg-slate-950/50 rounded-lg border border-slate-800/50">
+                         <Lock size={14} className="text-slate-500" />
+                         <p className="text-xs text-slate-500">
+                             Keep your streak going to unlock this stage and see future advice.
+                         </p>
+                     </div>
+                 </div>
+            ) : isExpanded && (
               <div className="px-4 pb-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 {/* Symptoms Tags */}
                 <div className="mb-4">

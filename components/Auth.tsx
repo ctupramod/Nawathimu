@@ -39,7 +39,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin, lang, setLang }) => {
       level: 1,
       city: formData.city,
       ageRange: formData.ageRange,
-      email: formData.email
+      email: formData.email,
+      currentStreak: 0
     };
 
     const success = StorageService.registerUser(newUser, formData.password);
@@ -60,8 +61,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin, lang, setLang }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black">
-      <div className="absolute top-4 right-4 flex gap-2">
+    // Changed: Added py-12 and min-h-screen without fixed centering to allow scrolling
+    <div className="min-h-screen w-full flex flex-col items-center justify-center py-20 px-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black">
+      <div className="absolute top-4 right-4 flex gap-2 z-20">
         {(['en', 'si', 'ta'] as Language[]).map(l => (
             <button 
                 key={l}
@@ -73,8 +75,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin, lang, setLang }) => {
         ))}
       </div>
 
-      <div className="w-full max-w-md space-y-8 animate-float">
-        <div className="text-center">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center animate-float">
           <div className="bg-emerald-500/20 p-4 rounded-full w-20 h-20 mx-auto flex items-center justify-center mb-6 ring-4 ring-emerald-500/10">
             <ShieldCheck size={40} className="text-emerald-400" />
           </div>
@@ -84,6 +86,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, lang, setLang }) => {
           <p className="text-slate-400 mt-2">{t('welcome', lang)}</p>
         </div>
 
+        {/* Removed animate-float from form to make inputs easier to tap */}
         <div className="glass-panel p-6 rounded-2xl space-y-4 shadow-2xl">
           {/* Common Fields */}
           <div>
