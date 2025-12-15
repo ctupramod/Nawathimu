@@ -213,6 +213,23 @@ const Dashboard: React.FC<DashboardProps> = ({ user, daysClean, logs, onChangeVi
                 </div>
             </div>
 
+            {/* Share Progress Button */}
+            <button
+                onClick={() => setShowShareModal(true)}
+                className="w-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 p-4 rounded-2xl shadow-lg shadow-pink-900/20 flex items-center justify-between group transition-all"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="bg-white/20 p-2.5 rounded-xl text-white">
+                        <Share2 size={20} />
+                    </div>
+                    <div className="text-left">
+                        <h3 className="font-bold text-white">Share Progress</h3>
+                        <p className="text-xs text-pink-100/80">Create a story for social media</p>
+                    </div>
+                </div>
+                <ArrowRight size={18} className="text-pink-200 group-hover:translate-x-1 transition-transform" />
+            </button>
+
             {/* Community Teaser */}
             <button 
                 onClick={() => onChangeView(AppView.COMMUNITY)}
